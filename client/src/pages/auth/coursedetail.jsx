@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Sun, Moon, ArrowLeft } from "lucide-react";
-import axios from "axios";
+import axios from "../../lib/axios";
 
 export default function VideoCourse() {
   const { courseId } = useParams();
@@ -116,8 +116,7 @@ export default function VideoCourse() {
                     "embed/"
                   )}?autoplay=1`}
                   title={selectedLesson.title}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 ></iframe>
               ) : (

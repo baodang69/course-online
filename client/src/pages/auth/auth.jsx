@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import axios from "axios";
+import axios from "../../lib/axios";
 import { GraduationCap } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -66,9 +66,27 @@ const AuthPage = () => {
       });
 
       toast.success("Đăng nhập thành công!");
+      const user = res.data.user;
+
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      navigate("/"); // Chuyển hướng sau khi đăng nhập thành công
+      localStorage.setItem("user", JSON.stringify(user));
+
+      // Gửi request để lấy chi tiết role nếu cần
+      const roleRes = await axios.get(`${API_BASE_URL}/role`);
+      const roles = roleRes.data; // API trả về một mảng [{_id, roleName}, {...}]
+
+      console.log("All Roles:", roles); // Kiểm tra dữ liệu trả về
+
+      // Tìm role của user theo _id
+      const userRole = roles.find((role) => role._id === user.role)?.roleName;
+
+      console.log("User Role:", userRole); // Xem thử có lấy được roleName hay không
+
+      if (userRole === "Admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Đăng nhập thất bại!");
     }

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axios from "../../lib/axios";
 import { PlayCircle, Lock, CheckCircle } from "lucide-react";
 
 const CoursePage = () => {

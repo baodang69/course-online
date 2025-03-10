@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Role = require("../models/Role");
 
 const SECRET_KEY = process.env.JWT_SECRET || "mySecretKey";
 
@@ -26,13 +27,19 @@ exports.register = async (req, res) => {
     //   avatarUrl = uploadResult.secure_url;
     // }
 
+    // Tìm role "User" trong bảng Role
+    const userRole = await Role.findOne({ roleName: "User" });
+    if (!userRole) {
+      return res.status(500).json({ message: "Không tìm thấy role 'User'!" });
+    }
+
     // Lưu user vào DB
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
       avatar: avatarUrl,
-      enrolledCourses: [],
+      role: userRole._id, // Gán ObjectId của role "User"
     });
 
     await newUser.save();
@@ -59,11 +66,11 @@ exports.login = async (req, res) => {
     });
 
     res.cookie("token", token, {
-      httpOnly: true,
+      httpOnly: false,
       secure: false,
       sameSite: "strict",
     });
-
+    console.log("🟢 Headers gửi về client:", res.getHeaders());
     res.json({ message: "Đăng nhập thành công!", token, user });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server!" });
@@ -73,11 +80,7 @@ exports.login = async (req, res) => {
 // 📌 Lấy thông tin người dùng
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select("-password");
-    if (!user)
-      return res.status(404).json({ message: "Không tìm thấy người dùng!" });
-
-    res.json(user);
+    res.json(req.user); // Dữ liệu user đã được middleware lấy sẵn
   } catch (error) {
     res.status(500).json({ message: "Lỗi server!" });
   }

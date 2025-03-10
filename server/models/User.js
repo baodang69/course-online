@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     avatar: { type: String }, // Lưu URL ảnh từ Cloudinary
-    enrolledCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Course" }],
+    role: { type: mongoose.Schema.Types.ObjectId, ref: "Role" },
   },
   { timestamps: true }
 );

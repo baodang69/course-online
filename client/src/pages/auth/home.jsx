@@ -31,9 +31,21 @@ const Home = () => {
             Liên hệ
           </Link>
           {user ? (
-            <span className="text-blue-600 font-medium">
-              Xin chào, {user.name}!
-            </span>
+            <div className="flex items-center space-x-4">
+              <span className="text-blue-600 font-medium">
+                Xin chào, {user.name}!
+              </span>
+              <button
+                onClick={() => {
+                  localStorage.removeItem("user");
+                  localStorage.removeItem("token"); // Xóa token nếu có
+                  setUser(null);
+                }}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                Đăng xuất
+              </button>
+            </div>
           ) : (
             <Link
               to="/auth"

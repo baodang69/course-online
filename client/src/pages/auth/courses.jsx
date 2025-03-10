@@ -1,10 +1,9 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axios from "../../lib/axios";
 
 const Course = () => {
   const [courses, setCourses] = useState([]);
