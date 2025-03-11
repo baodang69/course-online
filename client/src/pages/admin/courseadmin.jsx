@@ -1,24 +1,10 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import { Trash, Plus, Edit } from "lucide-react"; // Import Plus icon
 import axios from "../../lib/axios";
+import CourseCard from "../../components/ui/cardcourse";
+import CourseDialog from "../../components/ui/dialogcourse";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input"; // Import Input
 
 const CourseAdmin = () => {
   const [courses, setCourses] = useState([]);
@@ -28,7 +14,8 @@ const CourseAdmin = () => {
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [user, setUser] = useState(null);
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(""); // State cho tìm kiếm
+  const [searchResults, setSearchResults] = useState([]); // State cho kết quả tìm kiếm
   const [editedCourse, setEditedCourse] = useState({
     title: "",
     image: "",
@@ -59,12 +46,21 @@ const CourseAdmin = () => {
         setCourses(courseRes.data);
         setCategories(categoryRes.data);
         setLevels(levelRes.data);
+        // Lọc kết quả tìm kiếm
+        if (searchTerm) {
+          const filteredCourses = courseRes.data.filter((course) =>
+            course.title.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+          setSearchResults(filteredCourses);
+        } else {
+          setSearchResults(courseRes.data);
+        }
       } catch (error) {
         console.error("Error fetching data:", error.response || error.message);
       }
     };
     fetchData();
-  }, []);
+  }, [searchTerm]); // Thêm searchTerm vào dependency array
 
   const handleDelete = async (courseId) => {
     if (!window.confirm("Bạn có chắc muốn xóa khóa học này?")) return;
@@ -84,7 +80,11 @@ const CourseAdmin = () => {
   };
 
   const handleInputChange = (e) => {
-    setEditedCourse({ ...editedCourse, [e.target.name]: e.target.value });
+    if (e.target.name === "searchTerm") {
+      setSearchTerm(e.target.value); // Cập nhật searchTerm
+    } else {
+      setEditedCourse({ ...editedCourse, [e.target.name]: e.target.value });
+    }
   };
 
   const handleAddObjective = () => {
@@ -114,7 +114,7 @@ const CourseAdmin = () => {
       if (userData) {
         try {
           const parsedUser = JSON.parse(userData);
-          userId = parsedUser._id; // Lấy _id từ parsedUser
+          userId = parsedUser._id;
         } catch (error) {
           console.error("Error parsing user data from localStorage:", error);
         }
@@ -122,18 +122,17 @@ const CourseAdmin = () => {
 
       if (!userId) {
         console.error("User ID not found in localStorage");
-        return; // Dừng lại nếu không tìm thấy userId
+        return;
       }
 
       const courseData = {
         ...editedCourse,
-        instructor: userId, // Gắn userId vào trường instructor
+        instructor: userId,
       };
 
-      console.log("Course data:", courseData); // Kiểm tra dữ liệu trước khi gửi
+      console.log("Course data:", courseData); // Kiểm tra dữ liệu gửi đi
 
       if (selectedCourse && selectedCourse._id) {
-        // Cập nhật khóa học hiện có
         await axios.put(
           `http://localhost:5000/api/course/${selectedCourse._id}`,
           courseData
@@ -144,17 +143,16 @@ const CourseAdmin = () => {
           )
         );
       } else {
-        // Thêm khóa học mới
         const response = await axios.post(
           "http://localhost:5000/api/course",
           courseData
         );
+        console.log("API response:", response.data); // Kiểm tra phản hồi từ API
         setCourses([...courses, response.data]);
       }
       setIsDialogOpen(false);
       setSelectedCourse(null);
       setEditedCourse({
-        // Reset lại editedCourse
         title: "",
         image: "",
         description: "",
@@ -165,192 +163,57 @@ const CourseAdmin = () => {
         objectives: [],
       });
     } catch (error) {
-      console.error(
-        "Error updating/creating course:",
-        error.response ? error.response.data : error.message
-      );
+      console.error("Error updating/creating course:", error); // Kiểm tra lỗi chi tiết
+      if (error.response) {
+        console.error("API error data:", error.response.data);
+        console.error("API error status:", error.response.status);
+      }
     }
   };
-
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      {" "}
+      {/* Thêm background trắng */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Quản lý khóa học</h1>
         <Button onClick={() => handleEditClick({}, false)}>Thêm mới</Button>
       </div>
-
+      {/* Cải thiện input tìm kiếm */}
+      <div className="relative mb-4">
+        <Input
+          type="text"
+          placeholder="Tìm kiếm khóa học..."
+          className="pl-10 border rounded-md shadow-sm"
+          name="searchTerm"
+          value={searchTerm}
+          onChange={handleInputChange}
+        />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {courses.map((course) => (
-          <Card key={course._id} className="p-4 hover:scale-105 cursor-pointer">
-            <img
-              src={course.image}
-              alt={course.title}
-              className="w-full h-72 object-cover rounded-lg"
-              onClick={() => handleEditClick(course, true)}
-            />
-            <CardContent className="mt-2">
-              <h2 className="text-lg font-semibold">{course.title}</h2>
-              <div className="flex justify-between mt-2">
-                <Button onClick={() => handleEditClick(course, false)}>
-                  <Edit size={16} />
-                </Button>
-                <Button onClick={() => handleDelete(course._id)}>
-                  <Trash size={16} />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        {searchResults.map((course) => (
+          <CourseCard
+            key={course._id}
+            course={course}
+            onEdit={handleEditClick}
+            onDelete={handleDelete}
+            onRead={(course) => handleEditClick(course, true)}
+          />
         ))}
       </div>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent
-          className="max-w-4xl"
-          style={{ overflow: "auto", maxHeight: "80vh" }}
-        >
-          <DialogHeader>
-            <DialogTitle>
-              {isReadOnly ? "Xem khóa học" : "Chỉnh sửa khóa học"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Label>Tiêu đề</Label>
-            <Input
-              name="title"
-              value={editedCourse.title}
-              onChange={handleInputChange}
-              disabled={isReadOnly}
-            />
-            <Label>Hình ảnh</Label>
-            <Input
-              name="image"
-              value={editedCourse.image}
-              onChange={handleInputChange}
-              disabled={isReadOnly}
-            />
-            <Label>Mô tả</Label>
-            <Input
-              name="description"
-              value={editedCourse.description}
-              onChange={handleInputChange}
-              disabled={isReadOnly}
-            />
-            <Label>Giá</Label>
-            <Input
-              type="number"
-              name="price"
-              value={editedCourse.price}
-              onChange={handleInputChange}
-              disabled={isReadOnly}
-            />
-
-            {/* Chọn Category */}
-            <Label>Danh mục</Label>
-            <Select
-              onValueChange={(value) =>
-                setEditedCourse({ ...editedCourse, categoryId: value })
-              }
-              value={editedCourse.categoryId}
-              disabled={isReadOnly}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn danh mục" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat._id} value={cat._id}>
-                    {cat.categoryName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Chọn Level */}
-            <Label>Cấp độ</Label>
-            <Select
-              onValueChange={(value) =>
-                setEditedCourse({ ...editedCourse, levelId: value })
-              }
-              value={editedCourse.levelId}
-              disabled={isReadOnly}
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder="Chọn cấp độ"
-                  value={levels.levelNName}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {levels.map((lvl) => (
-                  <SelectItem key={lvl._id} value={lvl._id}>
-                    {lvl.levelName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* Chọn Status */}
-            <Label>Trạng thái</Label>
-            <Select
-              onValueChange={(value) =>
-                setEditedCourse({ ...editedCourse, status: value })
-              }
-              value={editedCourse.status}
-              disabled={isReadOnly}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
-              </SelectContent>
-            </Select>
-            {/* Mục tiêu khóa học */}
-            <Label>Mục tiêu khóa học</Label>
-            {editedCourse.objectives.map((obj, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <div className="flex items-center flex-grow border rounded-md overflow-hidden">
-                  <Input
-                    value={obj}
-                    onChange={(e) =>
-                      handleObjectiveChange(index, e.target.value)
-                    }
-                    disabled={isReadOnly}
-                    className="flex-grow border-0 focus-visible:ring-0"
-                  />
-                  {!isReadOnly && (
-                    <Button
-                      type="button"
-                      onClick={() => handleRemoveObjective(index)}
-                      variant="ghost"
-                      size="icon"
-                      className="text-black bg-white" // Custom styles
-                    >
-                      <Trash size={16} />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-            {!isReadOnly && (
-              <Button
-                type="button"
-                onClick={handleAddObjective}
-                className="bg-black text-white hover:bg-black-600 "
-              >
-                <Plus size={16} className="mr-2" /> {/* Plus icon */}
-                Thêm mục tiêu
-              </Button>
-            )}
-          </div>
-          <DialogFooter>
-            <Button onClick={() => setIsDialogOpen(false)}>Đóng</Button>
-            {!isReadOnly && (
-              <Button onClick={handleUpdateCourse}>Cập nhật</Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CourseDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        isReadOnly={isReadOnly}
+        editedCourse={editedCourse}
+        categories={categories}
+        levels={levels}
+        onInputChange={handleInputChange}
+        onAddObjective={handleAddObjective}
+        onRemoveObjective={handleRemoveObjective}
+        onObjectiveChange={handleObjectiveChange}
+        onUpdateCourse={handleUpdateCourse}
+      />
     </div>
   );
 };

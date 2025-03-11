@@ -1,61 +1,13 @@
+// pages/Home.js
 import { Link } from "react-router-dom";
-import { GraduationCap, Star } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Star } from "lucide-react";
+import Header from "../../components/ui/header";
+import Footer from "../../components/ui/footer";
 
 const Home = () => {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    // Lấy thông tin user từ localStorage
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Navbar */}
-      <nav className="bg-white shadow-md px-6 py-4 flex justify-between items-center">
-        <Link to="/" className="flex items-center space-x-2">
-          <GraduationCap className="h-8 w-8 text-blue-500" />
-          <span className="font-bold text-xl text-gray-900">LMS Learning</span>
-        </Link>
-        <div className="space-x-6 hidden md:flex">
-          <Link to="/courses" className="text-gray-700 hover:text-blue-500">
-            Khóa học
-          </Link>
-          <Link to="/about" className="text-gray-700 hover:text-blue-500">
-            Giới thiệu
-          </Link>
-          <Link to="/contact" className="text-gray-700 hover:text-blue-500">
-            Liên hệ
-          </Link>
-          {user ? (
-            <div className="flex items-center space-x-4">
-              <span className="text-blue-600 font-medium">
-                Xin chào, {user.name}!
-              </span>
-              <button
-                onClick={() => {
-                  localStorage.removeItem("user");
-                  localStorage.removeItem("token"); // Xóa token nếu có
-                  setUser(null);
-                }}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-              >
-                Đăng xuất
-              </button>
-            </div>
-          ) : (
-            <Link
-              to="/auth"
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-            >
-              Đăng nhập
-            </Link>
-          )}
-        </div>
-      </nav>
+      <Header />
 
       {/* Banner */}
       <header className="relative bg-blue-600 text-white py-20 text-center">
@@ -147,18 +99,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8 text-center">
-        <p>&copy; 2025 LMS Learning. All rights reserved.</p>
-        <div className="mt-3 space-x-4">
-          <Link to="/terms" className="text-gray-400 hover:underline">
-            Điều khoản
-          </Link>
-          <Link to="/privacy" className="text-gray-400 hover:underline">
-            Chính sách bảo mật
-          </Link>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

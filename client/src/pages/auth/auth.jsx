@@ -75,14 +75,17 @@ const AuthPage = () => {
       const roleRes = await axios.get(`${API_BASE_URL}/role`);
       const roles = roleRes.data; // API trả về một mảng [{_id, roleName}, {...}]
 
-      console.log("All Roles:", roles); // Kiểm tra dữ liệu trả về
+      console.log("User Role:", user.role);
+      console.log("Roles:", roles);
 
       // Tìm role của user theo _id
-      const userRole = roles.find((role) => role._id === user.role)?.roleName;
+      const userRoleId = user.role._id; // Lấy _id từ object user.role
+      const userRoleName = roles.find(
+        (role) => role._id === userRoleId
+      )?.roleName; // So sánh role._id với user.role._id
+      console.log("User Role Name:", userRoleName);
 
-      console.log("User Role:", userRole); // Xem thử có lấy được roleName hay không
-
-      if (userRole === "Admin") {
+      if (userRoleName === "Admin") {
         navigate("/admin");
       } else {
         navigate("/");

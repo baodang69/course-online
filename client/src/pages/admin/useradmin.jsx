@@ -1,20 +1,21 @@
 import { useEffect, useState } from "react";
 import axios from "../../lib/axios";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { toast } from "react-hot-toast";
+import UserCard from "@/components/ui/usercard";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const UserAdmin = () => {
   const [users, setUsers] = useState([]);
-  const [newUser, setNewUser] = useState({ name: "", email: "" });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -22,75 +23,86 @@ const UserAdmin = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("/users");
+      const res = await axios.get("http://localhost:5000/api/users");
       setUsers(res.data);
     } catch (error) {
       toast.error("Lỗi khi lấy danh sách người dùng");
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`/users/${id}`);
-      toast.success("Xóa người dùng thành công");
-      fetchUsers();
-    } catch (error) {
-      toast.error("Lỗi khi xóa người dùng");
+  const handleBan = async (id, isBanned) => {
+    const confirmMessage = isBanned
+      ? "Bạn có chắc chắn muốn mở khóa người dùng này?"
+      : "Bạn có chắc chắn muốn khóa người dùng này?";
+
+    if (window.confirm(confirmMessage)) {
+      try {
+        await axios.put(`http://localhost:5000/api/ban-user/${id}`);
+        toast.success("Thay đổi trạng thái người dùng thành công");
+        fetchUsers();
+      } catch (error) {
+        toast.error("Lỗi khi thay đổi trạng thái người dùng");
+      }
     }
   };
 
-  const handleAddUser = async () => {
-    try {
-      await axios.post("/users", newUser);
-      toast.success("Thêm người dùng thành công");
-      setNewUser({ name: "", email: "" });
-      fetchUsers();
-    } catch (error) {
-      toast.error("Lỗi khi thêm người dùng");
+  const filteredUsers = users.filter((user) => {
+    if (user.role && user.role.roleName === "User") {
+      if (searchTerm) {
+        const searchRegex = new RegExp(searchTerm, "i"); // "i" để tìm kiếm không phân biệt chữ hoa chữ thường
+        return searchRegex.test(user.name) || searchRegex.test(user.email);
+      }
+      return true; // Nếu searchTerm rỗng, trả về tất cả người dùng có vai trò "User"
     }
+    return false;
+  });
+
+  const openUserDetails = (user) => {
+    setSelectedUser(user);
+    setIsDialogOpen(true);
   };
 
   return (
     <div className="p-6 bg-white rounded-lg shadow">
       <h2 className="text-2xl font-bold mb-4">Quản lý Người dùng</h2>
-      <div className="mb-4 flex space-x-2">
-        <Input
-          placeholder="Tên"
-          value={newUser.name}
-          onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-        />
-        <Input
-          placeholder="Email"
-          value={newUser.email}
-          onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-        />
-        <Button onClick={handleAddUser}>Thêm</Button>
+      <Input
+        type="text"
+        placeholder="Tìm kiếm người dùng..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="mb-4"
+      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {filteredUsers.map((user) => (
+          <UserCard
+            key={user._id}
+            user={user}
+            onBan={handleBan}
+            openUserDetails={openUserDetails}
+          />
+        ))}
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Tên</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Hành động</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>{user.name}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleDelete(user.id)}
-                >
-                  Xóa
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Thông tin người dùng</DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div>
+              <img
+                src={selectedUser.avatar}
+                alt={`${selectedUser.name}'s avatar`}
+                className="w-20 h-20 rounded-full mb-4"
+              />
+              <p>Tên: {selectedUser.name}</p>
+              <p>Email: {selectedUser.email}</p>
+              <p>Vai trò: {selectedUser.role?.roleName}</p>
+              <p>Trạng thái: {selectedUser.isBanned ? "Banned" : "Normal"}</p>
+              {/* Thêm các thông tin khác nếu cần */}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

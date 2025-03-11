@@ -5,8 +5,9 @@ const userSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    avatar: { type: String }, // Lưu URL ảnh từ Cloudinary
+    avatar: { type: String },
     role: { type: mongoose.Schema.Types.ObjectId, ref: "Role" },
+    isBanned: { type: Boolean, default: false }, // Thêm trường isBanned
   },
   { timestamps: true }
 );

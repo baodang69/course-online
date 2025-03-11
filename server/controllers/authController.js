@@ -54,9 +54,13 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).populate("role");
     if (!user)
       return res.status(400).json({ message: "Tài khoản không tồn tại!" });
+
+    if (user.isBanned) {
+      return res.status(403).json({ message: "Tài khoản của bạn đã bị khóa!" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Sai mật khẩu!" });
@@ -89,11 +93,49 @@ exports.getProfile = async (req, res) => {
 // 📌 Lấy danh sách tất cả người dùng
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find();
+    const users = await User.find().populate("role");
     console.log(users);
 
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// API để ban user
+exports.banUser = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "Người dùng không tồn tại" });
+    }
+
+    user.isBanned = !user.isBanned; // Đảo ngược trạng thái isBanned
+    await user.save();
+
+    res.status(200).json({
+      message: user.isBanned
+        ? "Người dùng đã bị khóa"
+        : "Người dùng đã được mở khóa",
+      user,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+//Tìm user by id
+exports.getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).populate("role"); // populate role nếu cần
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

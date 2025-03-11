@@ -14,6 +14,8 @@ router.post("/login", authController.login);
 router.get("/profile", authController.getProfile);
 
 // Lấy danh sách người dùng
-router.get("/", authController.getAllUsers);
+router.get("/users", authController.getAllUsers);
+router.put("/ban-user/:userId", authController.banUser);
+router.get("/user/:userId", authController.getUserById);
 
 module.exports = router;
