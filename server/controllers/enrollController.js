@@ -98,3 +98,20 @@ exports.deleteEnrollment = async (req, res) => {
     res.status(500).json({ message: "Lỗi server!", error });
   }
 };
+
+// Get enrollment count for each course
+exports.getEnrollmentCount = async (req, res) => {
+  try {
+    const enrollments = await Enrollment.aggregate([
+      {
+        $group: {
+          _id: "$course",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    res.json(enrollments);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

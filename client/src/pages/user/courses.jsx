@@ -4,8 +4,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect } from "react";
 import axios from "../../lib/axios";
-import Header from "../../components/ui/header"; // Đã sửa đường dẫn import
-import Footer from "../../components/ui/footer"; // Đã sửa đường dẫn import
+import Header from "../../components/ui/header";
+import Footer from "../../components/ui/footer";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 const Course = () => {
   const [courses, setCourses] = useState([]);
@@ -14,6 +16,8 @@ const Course = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedLevels, setSelectedLevels] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [enrollmentCounts, setEnrollmentCounts] = useState({});
 
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?._id;
@@ -21,19 +25,31 @@ const Course = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [courseRes, enrollRes, categoryRes, levelRes] = await Promise.all(
-          [
-            axios.get(`http://localhost:5000/api/course`),
-            axios.get(`http://localhost:5000/api/enroll/check/${userId}`),
-            axios.get(`http://localhost:5000/api/category`),
-            axios.get(`http://localhost:5000/api/level`),
-          ]
-        );
+        const [
+          courseRes,
+          enrollRes,
+          categoryRes,
+          levelRes,
+          enrollmentCountRes,
+        ] = await Promise.all([
+          axios.get(`http://localhost:5000/api/course`),
+          axios.get(`http://localhost:5000/api/enroll/check/${userId}`),
+          axios.get(`http://localhost:5000/api/category`),
+          axios.get(`http://localhost:5000/api/level`),
+          axios.get(`http://localhost:5000/api/enroll/count`), // Thêm API call mới
+        ]);
 
         setCourses(courseRes.data);
         setEnrolled(enrollRes.data.map((id) => String(id)));
         setCategories(categoryRes.data);
         setLevels(levelRes.data);
+
+        // Chuyển đổi mảng count thành object để dễ truy cập
+        const countsObj = {};
+        enrollmentCountRes.data.forEach((item) => {
+          countsObj[item._id] = item.count;
+        });
+        setEnrollmentCounts(countsObj);
       } catch (error) {
         console.error("Error fetching data:", error.response || error.message);
       }
@@ -70,14 +86,19 @@ const Course = () => {
       (course.levelId &&
         selectedLevels.includes(course.levelId._id.toString()));
 
-    return matchCategory && matchLevel;
+    const matchSearch =
+      !searchTerm ||
+      course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (course.description &&
+        course.description.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    return matchCategory && matchLevel && matchSearch;
   });
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <Header />
       <div className="container mx-auto py-8 px-4 grid grid-cols-4 gap-6 flex-grow">
-        {/* Sidebar */}
         <aside className="col-span-1 border-r pr-4">
           <h2 className="font-bold text-xl mb-4">Category</h2>
           {categories.map((category) => (
@@ -120,10 +141,19 @@ const Course = () => {
           ))}
         </aside>
 
-        {/* Course List */}
         <section className="col-span-3">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold">All Courses</h1>
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Tìm kiếm khóa học..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-64 rounded-full py-2 px-4 pl-10 border border-gray-300 focus:outline-none focus:ring focus:border-blue-300"
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            </div>
           </div>
 
           <div className="grid gap-4">
@@ -144,25 +174,32 @@ const Course = () => {
                       className="w-full h-24 object-cover rounded-lg transition-transform duration-300 hover:scale-105"
                     />
                   </Link>
-                  <CardContent className="ml-4 flex flex-col">
-                    <Link
-                      to={
-                        enrolled.includes(String(course._id))
-                          ? `/enrolled/${course._id}`
-                          : `/courses/detail/${course._id}`
-                      }
-                      className="text-lg font-semibold transition-all duration-300 hover:underline hover:text-blue-600"
-                    >
-                      {course.title}
-                    </Link>
-                    <p className="text-sm text-gray-500">
-                      By: {course.instructor?.name}
-                    </p>
-                    <p className="text-lg font-bold">
-                      {course.price === 0
-                        ? "Miễn phí"
-                        : `${course.price.toLocaleString()} VND`}
-                    </p>
+                  <CardContent className="ml-4 flex-1 flex flex-col">
+                    <div className="flex-1">
+                      <Link
+                        to={
+                          enrolled.includes(String(course._id))
+                            ? `/enrolled/${course._id}`
+                            : `/courses/detail/${course._id}`
+                        }
+                        className="text-lg font-semibold transition-all duration-300 hover:underline hover:text-blue-600"
+                      >
+                        {course.title}
+                      </Link>
+                      <p className="text-sm text-gray-500">
+                        By: {course.instructor?.name}
+                      </p>
+                    </div>
+                    <div className="flex justify-between items-end mt-auto">
+                      <p className="text-lg font-bold">
+                        {course.price === 0
+                          ? "Miễn phí"
+                          : `${course.price.toLocaleString()} VND`}
+                      </p>
+                      <p className="text-sm text-gray-600 ml-auto">
+                        {enrollmentCounts[course._id] || 0} học viên đã tham gia
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               ))

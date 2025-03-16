@@ -16,6 +16,7 @@ router.get("/profile", authController.getProfile);
 // Lấy danh sách người dùng
 router.get("/users", authController.getAllUsers);
 router.put("/ban-user/:userId", authController.banUser);
+router.put("/user/:userId/name", authController.updateUserName);
 router.get("/user/:userId", authController.getUserById);
 
 module.exports = router;

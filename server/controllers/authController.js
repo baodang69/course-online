@@ -127,6 +127,26 @@ exports.banUser = async (req, res) => {
   }
 };
 
+exports.updateUserName = async (req, res) => {
+  try {
+    const { newName } = req.body;
+    const userId = req.params.userId;
+
+    if (!newName) {
+      res.json({ message: "Tên không được để trống" });
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Người dùng không tồn tại" });
+    }
+    user.name = newName;
+    await user.save();
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
 //Tìm user by id
 exports.getUserById = async (req, res) => {
   try {

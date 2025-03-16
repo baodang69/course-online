@@ -74,7 +74,13 @@ const CourseAdmin = () => {
 
   const handleEditClick = (course, readOnly = false) => {
     setSelectedCourse(course);
-    setEditedCourse({ ...course, objectives: course.objectives || [] });
+    setEditedCourse({
+      ...course,
+      // Đảm bảo lấy _id từ categoryId và levelId object
+      categoryId: course.categoryId?._id || course.categoryId,
+      levelId: course.levelId?._id || course.levelId,
+      objectives: course.objectives || [],
+    });
     setIsReadOnly(readOnly);
     setIsDialogOpen(true);
   };
@@ -108,48 +114,68 @@ const CourseAdmin = () => {
 
   const handleUpdateCourse = async () => {
     try {
-      const userData = localStorage.getItem("user");
-      let userId = null;
+      const formData = new FormData();
 
-      if (userData) {
-        try {
-          const parsedUser = JSON.parse(userData);
-          userId = parsedUser._id;
-        } catch (error) {
-          console.error("Error parsing user data from localStorage:", error);
-        }
+      // Log data being sent
+      console.log("Course data being sent:", editedCourse);
+
+      // Append all required fields
+      formData.append("title", editedCourse.title);
+      formData.append("description", editedCourse.description);
+      formData.append("price", editedCourse.price || 0);
+      formData.append("status", editedCourse.status || "draft");
+      formData.append("instructor", user._id); // Add instructor ID always
+
+      // Optional fields
+      if (editedCourse.categoryId) {
+        formData.append("categoryId", editedCourse.categoryId);
+      }
+      if (editedCourse.levelId) {
+        formData.append("levelId", editedCourse.levelId);
+      }
+      if (editedCourse.objectives?.length > 0) {
+        formData.append("objectives", JSON.stringify(editedCourse.objectives));
+      }
+      if (editedCourse.image instanceof File) {
+        formData.append("image", editedCourse.image);
       }
 
-      if (!userId) {
-        console.error("User ID not found in localStorage");
-        return;
+      // Log FormData contents
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
       }
 
-      const courseData = {
-        ...editedCourse,
-        instructor: userId,
-      };
-
-      console.log("Course data:", courseData); // Kiểm tra dữ liệu gửi đi
-
-      if (selectedCourse && selectedCourse._id) {
-        await axios.put(
+      let response;
+      if (selectedCourse?._id) {
+        response = await axios.put(
           `http://localhost:5000/api/course/${selectedCourse._id}`,
-          courseData
-        );
-        setCourses(
-          courses.map((course) =>
-            course._id === selectedCourse._id ? courseData : course
-          )
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
         );
       } else {
-        const response = await axios.post(
+        response = await axios.post(
           "http://localhost:5000/api/course",
-          courseData
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
         );
-        console.log("API response:", response.data); // Kiểm tra phản hồi từ API
-        setCourses([...courses, response.data]);
       }
+
+      console.log("Server response:", response.data);
+
+      // Update local state
+      setCourses((prevCourses) => {
+        if (selectedCourse?._id) {
+          return prevCourses.map((course) =>
+            course._id === selectedCourse._id ? response.data : course
+          );
+        }
+        return [...prevCourses, response.data];
+      });
+
       setIsDialogOpen(false);
       setSelectedCourse(null);
       setEditedCourse({
@@ -163,13 +189,25 @@ const CourseAdmin = () => {
         objectives: [],
       });
     } catch (error) {
-      console.error("Error updating/creating course:", error); // Kiểm tra lỗi chi tiết
+      console.error("Error details:", error);
       if (error.response) {
-        console.error("API error data:", error.response.data);
-        console.error("API error status:", error.response.status);
+        console.error("Server response:", error.response.data);
       }
+      toast.error("Có lỗi xảy ra khi lưu khóa học");
     }
   };
+
+  // Thêm xử lý file ảnh
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setEditedCourse((prev) => ({
+        ...prev,
+        image: file, // Save the file directly instead of URL
+      }));
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       {" "}
@@ -213,6 +251,7 @@ const CourseAdmin = () => {
         onRemoveObjective={handleRemoveObjective}
         onObjectiveChange={handleObjectiveChange}
         onUpdateCourse={handleUpdateCourse}
+        onImageChange={handleImageChange} // Thêm prop này
       />
     </div>
   );

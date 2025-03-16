@@ -65,6 +65,10 @@ const CoursePage = () => {
     }
   };
 
+  const handleNavigate = async () => {
+    navigate(`/enrolled/${id}`);
+  };
+
   if (loading)
     return <p className="text-center text-blue-500">Loading course...</p>;
   if (error) return <p className="text-center text-red-500">{error}</p>;
@@ -174,9 +178,14 @@ const CoursePage = () => {
                     Enroll Now
                   </Button>
                 ) : (
-                  <p className="text-center text-green-500 font-semibold">
-                    You are enrolled in this course
-                  </p>
+                  <>
+                    <p className="text-center text-green-500 font-semibold">
+                      You are enrolled in this course
+                    </p>
+                    <Button className="w-full mt-2" onClick={handleNavigate}>
+                      Get to courses
+                    </Button>
+                  </>
                 )}
               </CardContent>
             </Card>

@@ -15,7 +15,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Trash, Plus } from "lucide-react";
+import { Trash, Plus, ImagePlus } from "lucide-react";
 
 const CourseDialog = ({
   open,
@@ -29,6 +29,7 @@ const CourseDialog = ({
   onRemoveObjective,
   onObjectiveChange,
   onUpdateCourse,
+  onImageChange,
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -42,17 +43,50 @@ const CourseDialog = ({
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="image" className="text-right">
+              Ảnh khóa học
+            </Label>
+            <div className="col-span-3">
+              <div className="flex items-center gap-4">
+                <input
+                  type="file"
+                  id="image"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      onImageChange(e);
+                    }
+                  }}
+                  disabled={isReadOnly}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="image"
+                  className="flex items-center gap-2 cursor-pointer px-4 py-2 border rounded-md hover:bg-gray-50"
+                >
+                  <ImagePlus className="w-5 h-5" />
+                  Chọn ảnh
+                </label>
+                {editedCourse.image && (
+                  <img
+                    src={
+                      editedCourse.image instanceof File
+                        ? URL.createObjectURL(editedCourse.image)
+                        : editedCourse.image
+                    }
+                    alt="Preview"
+                    className="w-20 h-20 object-cover rounded-md"
+                  />
+                )}
+              </div>
+            </div>
+          </div>
           <Label>Tiêu đề</Label>
           <Input
             name="title"
             value={editedCourse.title}
-            onChange={onInputChange}
-            disabled={isReadOnly}
-          />
-          <Label>Hình ảnh</Label>
-          <Input
-            name="image"
-            value={editedCourse.image}
             onChange={onInputChange}
             disabled={isReadOnly}
           />

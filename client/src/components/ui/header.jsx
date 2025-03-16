@@ -1,6 +1,6 @@
 // components/Header.js
-import { Link } from "react-router-dom";
-import { GraduationCap, User } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { GraduationCap, User, Cat } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 const Header = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -24,13 +25,14 @@ const Header = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     setUser(null);
+    navigate("/auth"); // Add navigation after logout
   };
 
   return (
     <nav className="bg-white shadow-md px-6 py-4 flex justify-between items-center">
       <Link to="/" className="flex items-center space-x-2">
-        <GraduationCap className="h-8 w-8 text-blue-500" />
-        <span className="font-bold text-xl text-gray-900">LMS Learning</span>
+        <Cat className="h-8 w-8 text-blue-500" />
+        <span className="font-bold text-xl text-gray-900">LeOn</span>
       </Link>
       <div className="flex items-center space-x-6">
         <Link to="/courses" className="text-gray-700 hover:text-blue-500">

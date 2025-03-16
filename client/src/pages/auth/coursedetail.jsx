@@ -3,8 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, ArrowLeft } from "lucide-react";
+import { Sun, Moon, ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import axios from "../../lib/axios";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function VideoCourse() {
   const { courseId } = useParams();
@@ -13,6 +19,11 @@ export default function VideoCourse() {
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [courseTitle, setCourseTitle] = useState("Đang tải...");
   const [darkMode, setDarkMode] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [editingComment, setEditingComment] = useState(null);
+  const [editContent, setEditContent] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Kiểm tra nếu đang ở trang enrolled thì mới cho phép dark mode
   useEffect(() => {
@@ -64,6 +75,107 @@ export default function VideoCourse() {
     fetchCourseInfo();
   }, [courseId]);
 
+  // Fetch comments
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/comments/course/${courseId}`
+        );
+        setComments(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy comments:", error);
+      }
+    };
+    fetchComments();
+  }, [courseId]);
+
+  // Get current user
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        console.log("Logged in user:", user); // Debug user info
+        setCurrentUser(user);
+      } catch (error) {
+        console.error("Error parsing user:", error);
+      }
+    }
+  }, []);
+
+  // Thêm listener cho sự kiện userUpdated
+  useEffect(() => {
+    const handleUserUpdate = async (event) => {
+      const { userId, newName } = event.detail;
+
+      // Cập nhật comments nếu có comment của user vừa được update
+      setComments((prevComments) =>
+        prevComments.map((comment) => {
+          if (comment.userId._id === userId) {
+            return {
+              ...comment,
+              userId: {
+                ...comment.userId,
+                name: newName,
+              },
+            };
+          }
+          return comment;
+        })
+      );
+    };
+
+    window.addEventListener("userUpdated", handleUserUpdate);
+    return () => window.removeEventListener("userUpdated", handleUserUpdate);
+  }, []);
+
+  // Submit comment
+  const handleSubmitComment = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post("http://localhost:5000/api/comments", {
+        content: newComment,
+        courseId,
+      });
+      setComments([response.data, ...comments]);
+      setNewComment("");
+    } catch (error) {
+      console.error("Lỗi khi gửi comment:", error);
+    }
+  };
+
+  // Delete comment
+  const handleDeleteComment = async (commentId) => {
+    if (window.confirm("Bạn có chắc muốn xóa bình luận này?")) {
+      try {
+        await axios.delete(`http://localhost:5000/api/comments/${commentId}`);
+        setComments(comments.filter((comment) => comment._id !== commentId));
+      } catch (error) {
+        console.error("Lỗi khi xóa comment:", error);
+      }
+    }
+  };
+
+  // Update comment
+  const handleUpdateComment = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/comments/${editingComment._id}`,
+        { content: editContent }
+      );
+      setComments(
+        comments.map((comment) =>
+          comment._id === editingComment._id ? response.data : comment
+        )
+      );
+      setEditingComment(null);
+    } catch (error) {
+      console.error("Lỗi khi cập nhật comment:", error);
+    }
+  };
+
   return (
     <div
       className={`grid grid-cols-12 h-screen p-4 gap-4 ${
@@ -74,113 +186,217 @@ export default function VideoCourse() {
       <div className="col-span-12 flex justify-between items-center mb-4">
         {/* Back Button */}
         <Button
-          variant="outline"
+          variant="ghost"
           onClick={() => navigate(`/courses`)}
-          className="flex items-center"
+          className="flex items-center hover:bg-transparent"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
         </Button>
 
         {/* Course Title */}
-        <h1 className="text-2xl font-bold text-center">{courseTitle}</h1>
+        <h1 className="text-2xl font-bold">{courseTitle}</h1>
 
-        {/* Toggle Theme Button (Chỉ hiển thị nếu đang ở trang enrolled) */}
+        {/* Toggle Theme Button */}
         {window.location.pathname.includes("/enrolled/") && (
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={toggleDarkMode}
             className="flex items-center"
           >
             {darkMode ? (
-              <Sun className="w-5 h-5 mr-2" />
+              <Sun className="w-5 h-5" />
             ) : (
-              <Moon className="w-5 h-5 mr-2" />
+              <Moon className="w-5 h-5" />
             )}
-            {darkMode ? "Light Mode" : "Dark Mode"}
           </Button>
         )}
       </div>
 
       {/* Cột trái - Video + Nội dung */}
-      <div className="col-span-8 flex flex-col gap-4">
-        {/* Video */}
-        <ScrollArea className="flex-1 border rounded-lg p-2 max-h-[calc(100vh-100px)] overflow-y-auto">
-          <Card className="flex-1">
-            <CardContent className="p-4 h-full flex items-center">
-              {selectedLesson ? (
-                <iframe
-                  className="w-full rounded-lg aspect-video"
-                  src={`${selectedLesson.videoUrl.replace(
-                    "watch?v=",
-                    "embed/"
-                  )}?autoplay=1`}
-                  title={selectedLesson.title}
-                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
-              ) : (
-                <p className="text-center w-full">
-                  Chưa có video nào được chọn
-                </p>
-              )}
-            </CardContent>
-          </Card>
+      <div className="col-span-8">
+        <div className="space-y-4">
+          {/* Video Card */}
+          <div className="aspect-video">
+            {selectedLesson ? (
+              <iframe
+                className="w-full h-full"
+                src={`${selectedLesson.videoUrl.replace(
+                  "watch?v=",
+                  "embed/"
+                )}?autoplay=1`}
+                title={selectedLesson.title}
+                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                Chưa có video nào được chọn
+              </div>
+            )}
+          </div>
 
-          {/* Nội dung bài học + Resources */}
-          <Card className="flex-1">
-            <CardContent className="p-4">
-              <h2 className="text-xl font-semibold">
-                {selectedLesson ? selectedLesson.title : "Chưa chọn bài học"}
-              </h2>
-              <p>{selectedLesson ? selectedLesson.content : "Chưa có mô tả"}</p>
+          {/* Nội dung bài học */}
+          <div className="bg-white dark:bg-gray-800 p-4 rounded">
+            <h2 className="text-xl font-semibold mb-2">
+              {selectedLesson ? selectedLesson.title : "Chưa chọn bài học"}
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              {selectedLesson ? selectedLesson.content : "Chưa có mô tả"}
+            </p>
+          </div>
+        </div>
+      </div>
 
-              {/* Resources */}
-              {selectedLesson?.resources &&
-                selectedLesson.resources.length > 0 && (
-                  <div className="mt-4">
-                    <h2 className="text-lg font-semibold">
-                      Tài liệu tham khảo
-                    </h2>
-                    <ul className="list-disc list-inside text-sm">
-                      {selectedLesson.resources.map((url, index) => (
-                        <li key={index}>
-                          <a
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline"
-                          >
-                            {url}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
+      {/* Cột phải - Danh sách bài học và Comments */}
+      <div className="col-span-4">
+        <ScrollArea className="h-[calc(100vh-100px)]">
+          {/* Danh sách bài học */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Danh sách bài học</h2>
+            <div className="space-y-2">
+              {lessons.map((lesson) => (
+                <button
+                  key={lesson._id}
+                  onClick={() => setSelectedLesson(lesson)}
+                  className={`w-full p-2 text-left rounded transition ${
+                    selectedLesson?._id === lesson._id
+                      ? "bg-gray-100 dark:bg-gray-700"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  {lesson.title}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Comments section */}
+          <div className="pt-4 border-t">
+            <h2 className="text-lg font-semibold mb-4">Danh sách comment</h2>
+            <form onSubmit={handleSubmitComment} className="mb-6">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="w-full p-3 rounded bg-gray-50 dark:bg-gray-800"
+                placeholder="Viết bình luận của bạn..."
+                rows="3"
+              />
+              <Button type="submit" className="w-full mt-2">
+                Gửi bình luận
+              </Button>
+            </form>
+
+            <div className="space-y-4">
+              {comments.map((comment) => {
+                // Debug logs
+                console.log("Comment:", {
+                  commentId: comment._id,
+                  commentUserId: comment.userId._id,
+                  commentUserName: comment.userId.name,
+                  currentUserId: currentUser?._id,
+                });
+
+                return (
+                  <div
+                    key={comment._id}
+                    className="bg-gray-50 dark:bg-gray-800 p-3 rounded"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={comment.userId.avatar || "/default-avatar.png"}
+                          alt=""
+                          className="w-8 h-8 rounded-full"
+                        />
+                        <div>
+                          <p className="font-medium">{comment.userId.name}</p>
+                          <p className="text-sm text-gray-500">
+                            {new Date(comment.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Debug visible condition */}
+                      {console.log(
+                        "Should show buttons:",
+                        currentUser?._id === comment.userId._id
+                      )}
+
+                      {/* Show edit/delete buttons với điều kiện đã sửa */}
+                      {currentUser &&
+                        currentUser._id === comment.userId._id && (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                console.log(
+                                  "Edit clicked for comment:",
+                                  comment._id
+                                ); // Debug edit click
+                                setEditingComment(comment);
+                                setEditContent(comment.content);
+                              }}
+                            >
+                              <Pencil className="w-4 h-4 mr-1" />
+                              Sửa
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                console.log(
+                                  "Delete clicked for comment:",
+                                  comment._id
+                                ); // Debug delete click
+                                handleDeleteComment(comment._id);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Xóa
+                            </Button>
+                          </div>
+                        )}
+                    </div>
+                    <p className="mt-2">{comment.content}</p>
                   </div>
-                )}
-            </CardContent>
-          </Card>
+                );
+              })}
+            </div>
+          </div>
         </ScrollArea>
       </div>
 
-      {/* Cột phải - Danh sách bài học */}
-      <div className="col-span-4 border-l pl-4 flex flex-col">
-        <h2 className="text-lg font-semibold mb-2">Danh sách bài học</h2>
-        <ScrollArea className="flex-1 border rounded-lg p-2 max-h-[calc(100vh-290px)] overflow-y-auto">
-          {lessons.map((lesson) => (
-            <Button
-              key={lesson._id}
-              variant={
-                selectedLesson?._id === lesson._id ? "default" : "outline"
-              }
-              className="w-full text-left mb-2 rounded-lg"
-              onClick={() => setSelectedLesson(lesson)}
-            >
-              {lesson.title}
-            </Button>
-          ))}
-        </ScrollArea>
-      </div>
+      {/* Edit Comment Dialog */}
+      <Dialog
+        open={!!editingComment}
+        onOpenChange={() => setEditingComment(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chỉnh sửa bình luận</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateComment} className="space-y-4">
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="w-full p-3 rounded bg-gray-50 dark:bg-gray-800"
+              rows="3"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditingComment(null)}
+              >
+                Hủy
+              </Button>
+              <Button type="submit">Lưu</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

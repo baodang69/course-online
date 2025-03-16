@@ -1,5 +1,12 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { Home, BookOpen, Users, Notebook, LogOut } from "lucide-react";
+import {
+  Home,
+  BookOpen,
+  Users,
+  Notebook,
+  LogOut,
+  MessageSquare,
+} from "lucide-react";
 
 const AdminLayout = () => {
   const navigate = useNavigate();
@@ -23,6 +30,11 @@ const AdminLayout = () => {
             <NavItem to="/admin/users" icon={Users} text="Người dùng" />
             <NavItem to="/admin/courses" icon={BookOpen} text="Khóa học" />
             <NavItem to="/admin/lessons" icon={Notebook} text="Bài học" />
+            <NavItem
+              to="/admin/contacts"
+              icon={MessageSquare}
+              text="Phản hồi"
+            />
           </nav>
         </div>
 
