@@ -9,9 +9,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ["framer-motion"],
+  },
   build: {
     rollupOptions: {
       external: ["framer-motion"],
+    },
+    commonjsOptions: {
+      include: [/framer-motion/],
     },
   },
 });
