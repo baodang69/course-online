@@ -10,14 +10,11 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ["framer-motion"],
+    include: ["react", "react-dom", "lucide-react", "framer-motion"],
   },
   build: {
-    rollupOptions: {
-      external: ["framer-motion"],
-    },
     commonjsOptions: {
-      include: [/framer-motion/],
+      transformMixedEsModules: true,
     },
   },
 });
