@@ -3,7 +3,7 @@ import {
   Home,
   BookOpen,
   Users,
-  Notebook,
+  Book, // Change Notebook to Book
   LogOut,
   MessageSquare,
 } from "lucide-react";
@@ -29,7 +29,8 @@ const AdminLayout = () => {
             <NavItem to="/admin" icon={Home} text="Dashboard" />
             <NavItem to="/admin/users" icon={Users} text="Người dùng" />
             <NavItem to="/admin/courses" icon={BookOpen} text="Khóa học" />
-            <NavItem to="/admin/lessons" icon={Notebook} text="Bài học" />
+            <NavItem to="/admin/lessons" icon={Book} text="Bài học" />{" "}
+            {/* Update this line */}
             <NavItem
               to="/admin/contacts"
               icon={MessageSquare}
