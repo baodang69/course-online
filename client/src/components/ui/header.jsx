@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { toast } from "react-hot-toast";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -28,6 +29,17 @@ const Header = () => {
     navigate("/auth"); // Add navigation after logout
   };
 
+  const handleCoursesClick = (e) => {
+    e.preventDefault();
+    const user = localStorage.getItem("user");
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để xem khóa học");
+      navigate("/auth");
+      return;
+    }
+    navigate("/courses");
+  };
+
   return (
     <nav className="bg-white shadow-md px-6 py-4 flex justify-between items-center">
       <Link to="/" className="flex items-center space-x-2">
@@ -35,11 +47,15 @@ const Header = () => {
         <span className="font-bold text-xl text-gray-900">LeOn</span>
       </Link>
       <div className="flex items-center space-x-6">
-        <Link to="/courses" className="text-gray-700 hover:text-blue-500">
-          Khóa học
-        </Link>
         <Link to="/" className="text-gray-700 hover:text-blue-500">
           Giới thiệu
+        </Link>
+        <Link
+          to="/courses"
+          className="text-gray-700 hover:text-blue-500"
+          onClick={handleCoursesClick}
+        >
+          Khóa học
         </Link>
         <Link to="/contact" className="text-gray-700 hover:text-blue-500">
           Liên hệ

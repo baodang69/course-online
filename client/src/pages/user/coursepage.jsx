@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect } from "react";
 import axios from "../../lib/axios";
-import { PlayCircle, Lock, CheckCircle } from "lucide-react";
+import { PlayCircle, Lock, CheckCircle, Clock } from "lucide-react";
 import Header from "../../components/ui/header"; // Đã sửa đường dẫn import
 import Footer from "../../components/ui/footer"; // Đã sửa đường dẫn import
+import { motion } from "framer-motion";
 
 const CoursePage = () => {
   const { id } = useParams();
@@ -79,117 +80,161 @@ const CoursePage = () => {
   const firstLesson = lessons.find((lesson) => lesson.order === 1);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
       <Header />
-      <div className="container mx-auto py-8 px-4 flex-grow">
-        <div className="bg-gray-900 text-white p-6 rounded-lg flex items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">{course.title}</h1>
-            <p className="text-lg">{course.content}</p>
-            <p className="text-sm text-gray-400">
-              Created On {new Date(course.createdAt).toLocaleDateString()}
-            </p>
-          </div>
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-4xl mx-auto text-center"
+          >
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              {course?.title}
+            </h1>
+            <p className="text-lg text-blue-100 mb-6">{course?.description}</p>
+            <div className="flex items-center justify-center gap-4 text-sm">
+              <span className="flex items-center">
+                <Clock className="w-4 h-4 mr-2" />
+                {new Date(course?.createdAt).toLocaleDateString()}
+              </span>
+            </div>
+          </motion.div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-3 gap-6 mt-6">
-          <div className="col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Course Description</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{course.description}</p>
-              </CardContent>
-            </Card>
-
-            {lessons.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Lessons</CardTitle>
+      <div className="container mx-auto py-12 px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Course Overview */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="overflow-hidden">
+                <CardHeader className="bg-gray-50 border-b">
+                  <CardTitle className="text-2xl">Course Overview</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <ul className="space-y-4">
-                    {visibleLessons.map((lesson, index) => (
-                      <li
-                        key={lesson._id}
-                        className="p-4 bg-gray-100 rounded-lg flex items-center space-x-2"
-                      >
-                        {index !== 0 ? (
-                          <Lock className="w-6 h-6 text-black" />
-                        ) : (
-                          <PlayCircle className="w-7 h-7 text-green-500" />
-                        )}
-                        <h3 className="text-lg font-semibold">
-                          {lesson.title}
-                        </h3>
-                      </li>
-                    ))}
-                  </ul>
-                  {lessons.length > 7 && (
-                    <Button
-                      onClick={() => setShowAllLessons(!showAllLessons)}
-                      className="mt-4 w-full"
-                    >
-                      {showAllLessons ? "Thu gọn" : "Xem thêm"}
-                    </Button>
-                  )}
+                <CardContent className="p-6">
+                  <div className="prose max-w-none">
+                    <p className="text-gray-600">{course?.description}</p>
+                  </div>
                 </CardContent>
               </Card>
-            )}
+            </motion.div>
+
+            {/* Lessons Section */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card>
+                <CardHeader className="bg-gray-50 border-b">
+                  <CardTitle className="text-2xl">Course Content</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y">
+                    {visibleLessons.map((lesson, index) => (
+                      <div
+                        key={lesson._id}
+                        className="p-4 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="flex-shrink-0">
+                            {index === 0 ? (
+                              <PlayCircle className="w-8 h-8 text-green-500" />
+                            ) : (
+                              <Lock className="w-8 h-8 text-gray-400" />
+                            )}
+                          </div>
+                          <div className="flex-grow">
+                            <h3 className="text-lg font-medium">
+                              {lesson.title}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                              {lesson.duration || "45 mins"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
 
-          <div className="col-span-1 space-y-6">
-            <Card>
-              <CardContent className="p-4">
-                {firstLesson?.videoUrl &&
-                  (firstLesson.videoUrl.includes("youtube.com") ||
-                  firstLesson.videoUrl.includes("youtu.be") ? (
+          {/* Sidebar */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
+            className="lg:col-span-1"
+          >
+            <div className="sticky top-4 space-y-6">
+              {/* Preview Video */}
+              <Card className="overflow-hidden">
+                <div className="aspect-video">
+                  {firstLesson?.videoUrl && (
                     <iframe
-                      className="w-full rounded-lg"
-                      width="560"
-                      height="315"
+                      className="w-full h-full"
                       src={firstLesson.videoUrl.replace("watch?v=", "embed/")}
-                      title="Lesson Video"
+                      title="Course Preview"
                       frameBorder="0"
                       allowFullScreen
-                    ></iframe>
-                  ) : (
-                    <video controls className="w-full rounded-lg">
-                      <source src={firstLesson.videoUrl} type="video/mp4" />
-                    </video>
-                  ))}
-                <Separator className="my-4" />
+                    />
+                  )}
+                </div>
+                <CardContent className="p-6">
+                  <div className="flex flex-col gap-4">
+                    <div className="text-3xl font-bold">
+                      {course?.price === 0
+                        ? "Free"
+                        : `${course?.price.toLocaleString()} VND`}
+                    </div>
+                    {!isEnrolled ? (
+                      <Button
+                        size="lg"
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        onClick={handleEnroll}
+                      >
+                        Enroll Now
+                      </Button>
+                    ) : (
+                      <Button
+                        size="lg"
+                        className="w-full bg-green-600 hover:bg-green-700"
+                        onClick={handleNavigate}
+                      >
+                        Continue Learning
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
-                <div className="mb-4">
-                  <h3 className="text-lg font-bold mb-2">Objectives</h3>
-                  <ul className="space-y-2">
-                    {course.objectives?.map((objective, index) => (
-                      <li key={index} className="flex items-center space-x-2">
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                        <span>{objective}</span>
+              {/* Course Features */}
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-semibold mb-4">
+                    What you'll learn
+                  </h3>
+                  <ul className="space-y-3">
+                    {course?.objectives?.map((objective, index) => (
+                      <li key={index} className="flex gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        <span className="text-gray-600">{objective}</span>
                       </li>
                     ))}
                   </ul>
-                </div>
-
-                {!isEnrolled ? (
-                  <Button className="w-full mt-2" onClick={handleEnroll}>
-                    Enroll Now
-                  </Button>
-                ) : (
-                  <>
-                    <p className="text-center text-green-500 font-semibold">
-                      You are enrolled in this course
-                    </p>
-                    <Button className="w-full mt-2" onClick={handleNavigate}>
-                      Get to courses
-                    </Button>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </div>
+          </motion.div>
         </div>
       </div>
       <Footer />

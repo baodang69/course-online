@@ -49,10 +49,10 @@ const UserAdmin = () => {
   const filteredUsers = users.filter((user) => {
     if (user.role && user.role.roleName === "User") {
       if (searchTerm) {
-        const searchRegex = new RegExp(searchTerm, "i"); // "i" để tìm kiếm không phân biệt chữ hoa chữ thường
+        const searchRegex = new RegExp(searchTerm, "i");
         return searchRegex.test(user.name) || searchRegex.test(user.email);
       }
-      return true; // Nếu searchTerm rỗng, trả về tất cả người dùng có vai trò "User"
+      return true;
     }
     return false;
   });
@@ -98,7 +98,6 @@ const UserAdmin = () => {
               <p>Email: {selectedUser.email}</p>
               <p>Vai trò: {selectedUser.role?.roleName}</p>
               <p>Trạng thái: {selectedUser.isBanned ? "Banned" : "Normal"}</p>
-              {/* Thêm các thông tin khác nếu cần */}
             </div>
           )}
         </DialogContent>

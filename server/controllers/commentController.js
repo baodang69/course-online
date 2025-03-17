@@ -1,4 +1,5 @@
 const Comment = require("../models/Comment");
+const User = require("../models/User");
 
 // Get all comments for a course
 exports.getCommentsByCourse = async (req, res) => {
@@ -39,17 +40,22 @@ exports.createComment = async (req, res) => {
 exports.deleteComment = async (req, res) => {
   try {
     const comment = await Comment.findById(req.params.id);
-
     if (!comment) {
       return res.status(404).json({ message: "Comment not found" });
     }
 
-    // Check if user is owner of comment
-    if (comment.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Not authorized" });
+    // Check if user is admin or comment owner
+    const user = await User.findById(req.user.id).populate("role");
+    if (
+      user.role.roleName !== "Admin" &&
+      comment.userId.toString() !== req.user.id
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this comment" });
     }
 
-    await comment.remove();
+    await Comment.findByIdAndDelete(req.params.id);
     res.json({ message: "Comment deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });

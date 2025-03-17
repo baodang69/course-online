@@ -18,7 +18,8 @@ exports.register = async (req, res) => {
     // Mã hóa mật khẩu
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    let avatarUrl = "https://example.com/default-avatar.png"; // Ảnh mặc định
+    let avatarUrl =
+      "https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg"; // Ảnh mặc định
     // if (req.file) {
     //   // Tải ảnh lên Cloudinary
     //   const uploadResult = await cloudinary.uploader.upload(req.file.path, {
@@ -39,7 +40,7 @@ exports.register = async (req, res) => {
       email,
       password: hashedPassword,
       avatar: avatarUrl,
-      role: userRole._id, // Gán ObjectId của role "User"
+      role: userRole._id,
     });
 
     await newUser.save();

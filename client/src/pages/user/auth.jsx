@@ -3,6 +3,8 @@ import { useState } from "react";
 import axios from "../../lib/axios";
 import { GraduationCap } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
+import { motion } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -14,10 +16,10 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toast, Toaster } from "react-hot-toast"; // Hiển thị thông báo
+import { toast, Toaster } from "react-hot-toast";
 import Header from "@/components/ui/header";
 
-const API_BASE_URL = "http://localhost:5000/api"; // Thay đổi URL nếu cần
+const API_BASE_URL = "http://localhost:5000/api";
 
 const AuthPage = () => {
   const [activeTab, setActiveTab] = useState("signin");
@@ -71,19 +73,16 @@ const AuthPage = () => {
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(user));
-
-      // Gửi request để lấy chi tiết role nếu cần
       const roleRes = await axios.get(`${API_BASE_URL}/role`);
-      const roles = roleRes.data; // API trả về một mảng [{_id, roleName}, {...}]
+      const roles = roleRes.data;
 
       console.log("User Role:", user.role);
       console.log("Roles:", roles);
 
-      // Tìm role của user theo _id
-      const userRoleId = user.role._id; // Lấy _id từ object user.role
+      const userRoleId = user.role._id;
       const userRoleName = roles.find(
         (role) => role._id === userRoleId
-      )?.roleName; // So sánh role._id với user.role._id
+      )?.roleName;
       console.log("User Role Name:", userRoleName);
 
       if (userRoleName === "Admin") {
@@ -97,107 +96,140 @@ const AuthPage = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Toaster position="top-right" reverseOrder={false} />
-      <Header></Header>
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Tabs
-          value={activeTab}
-          onValueChange={handleTabChange}
-          className="w-full max-w-md"
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <Toaster position="top-right" />
+      <Header />
+
+      <div className="container mx-auto px-4 py-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md mx-auto"
         >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Sign In</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
-          </TabsList>
+          <Card className="shadow-lg border-0">
+            <Tabs
+              value={activeTab}
+              onValueChange={handleTabChange}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger
+                  value="signin"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  Đăng nhập
+                </TabsTrigger>
+                <TabsTrigger
+                  value="signup"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  Đăng ký
+                </TabsTrigger>
+              </TabsList>
 
-          {/* Đăng nhập */}
-          <TabsContent value="signin">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sign In</CardTitle>
-                <CardDescription>Nhập thông tin để đăng nhập.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="space-y-1">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="Nhập email"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="password">Mật khẩu</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Nhập mật khẩu"
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button onClick={handleLogin}>Sign In</Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
+              <TabsContent value="signin">
+                <CardHeader>
+                  <CardTitle className="text-2xl">Đăng nhập</CardTitle>
+                  <CardDescription>
+                    Đăng nhập để truy cập vào tài khoản của bạn
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="email@example.com"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Mật khẩu</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="••••••••"
+                      className="w-full"
+                      required
+                    />
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    onClick={handleLogin}
+                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600"
+                  >
+                    Đăng nhập
+                  </Button>
+                </CardFooter>
+              </TabsContent>
 
-          {/* Đăng ký */}
-          <TabsContent value="signup">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sign Up</CardTitle>
-                <CardDescription>Nhập thông tin để đăng ký.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="space-y-1">
-                  <Label htmlFor="name">Họ và Tên</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="Nhập họ và tên"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="Nhập email"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="password">Mật khẩu</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Nhập mật khẩu"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="rePassword">Nhập lại mật khẩu</Label>
-                  <Input
-                    id="rePassword"
-                    type="password"
-                    value={formData.rePassword}
-                    onChange={handleChange}
-                    placeholder="Nhập lại mật khẩu"
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button onClick={handleRegister}>Sign Up</Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              <TabsContent value="signup">
+                <CardHeader>
+                  <CardTitle className="text-2xl">Đăng ký</CardTitle>
+                  <CardDescription>
+                    Tạo tài khoản mới để bắt đầu học tập
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Họ và Tên</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Nguyễn Văn A"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="Nhập email"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Mật khẩu</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="Nhập mật khẩu"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="rePassword">Nhập lại mật khẩu</Label>
+                    <Input
+                      id="rePassword"
+                      type="password"
+                      value={formData.rePassword}
+                      onChange={handleChange}
+                      placeholder="Nhập lại mật khẩu"
+                    />
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    onClick={handleRegister}
+                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600"
+                  >
+                    Đăng ký
+                  </Button>
+                </CardFooter>
+              </TabsContent>
+            </Tabs>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     avatar: { type: String },
     role: { type: mongoose.Schema.Types.ObjectId, ref: "Role" },
-    isBanned: { type: Boolean, default: false }, // Thêm trường isBanned
+    isBanned: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

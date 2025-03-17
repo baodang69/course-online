@@ -2,6 +2,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import Header from "../../components/ui/header";
 import Footer from "../../components/ui/footer";
+import { motion } from "framer-motion";
+import { Card } from "@/components/ui/card";
+import { MessageCircle, Send, Clock } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 const Contact = () => {
   const [message, setMessage] = useState("");
@@ -80,38 +84,76 @@ const Contact = () => {
   );
 
   return (
-    <>
-      <Header></Header>
-      <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
-        <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
-          <h2 className="text-2xl font-semibold text-center text-gray-800 mb-4">
-            Để lại cảm nghĩ của bạn
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Nhập tin nhắn của bạn..."
-              required
-              className="w-full p-3 border rounded-md focus:ring focus:ring-blue-300 focus:border-blue-400"
-              rows="4"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-3 px-4 text-white rounded-md transition duration-300 ${
-                loading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600"
-              }`}
-            >
-              {loading ? "Đang gửi..." : "Gửi tin nhắn"}
-            </button>
-          </form>
-        </div>
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <div className="flex-grow bg-gradient-to-b from-blue-50 to-white py-16 px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-4xl mx-auto"
+        >
+          <Card className="p-8 shadow-lg">
+            <div className="text-center mb-8">
+              <MessageCircle className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+              <h1 className="text-3xl font-bold text-gray-800">
+                Phản Hồi & Đánh Giá
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Chia sẻ trải nghiệm học tập của bạn để chúng tôi có thể cải
+                thiện tốt hơn
+              </p>
+            </div>
+
+            {nextAvailableDate && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mb-6 p-4 bg-yellow-50 rounded-lg flex items-center gap-3"
+              >
+                <Clock className="w-5 h-5 text-yellow-600" />
+                <p className="text-yellow-700">
+                  Bạn có thể gửi phản hồi tiếp theo vào ngày{" "}
+                  {new Date(nextAvailableDate).toLocaleDateString()}
+                </p>
+              </motion.div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="relative">
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Chia sẻ cảm nghĩ của bạn về khóa học..."
+                  required
+                  className="w-full p-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[150px] resize-none"
+                  style={{ transition: "all 0.3s ease" }}
+                />
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={loading}
+                className={`w-full py-3 px-4 rounded-lg flex items-center justify-center gap-2 text-white font-medium transition-colors ${
+                  loading
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                }`}
+              >
+                <Send className={`w-5 h-5 ${loading ? "animate-pulse" : ""}`} />
+                {loading ? "Đang gửi..." : "Gửi phản hồi"}
+              </motion.button>
+            </form>
+
+            <p className="text-sm text-gray-500 text-center mt-6">
+              * Mỗi học viên chỉ có thể gửi một phản hồi trong vòng 3 tháng
+            </p>
+          </Card>
+        </motion.div>
       </div>
-      <Footer></Footer>
-    </>
+      <Footer />
+    </div>
   );
 };
 

@@ -10,15 +10,15 @@ const courseSchema = new mongoose.Schema(
       required: true,
     },
     image: { type: String },
-    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category" }, // Thêm categoryId
-    levelId: { type: mongoose.Schema.Types.ObjectId, ref: "Level" }, // Thêm levelId
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
+    levelId: { type: mongoose.Schema.Types.ObjectId, ref: "Level" },
     price: { type: Number, default: 0 },
     status: {
       type: String,
       enum: ["draft", "published", "archived"],
       default: "draft",
     },
-    objectives: [{ type: String }], // Danh sách mục tiêu khóa học
+    objectives: [{ type: String }],
   },
   { timestamps: true }
 );

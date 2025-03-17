@@ -17,7 +17,10 @@ const Course = () => {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedLevels, setSelectedLevels] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [enrollmentCounts, setEnrollmentCounts] = useState({});
+  const [enrollmentCounts, setEnrollmentCounts] = useState({}); // Thêm state mới
+  const [coursesEnrollCount, setCoursesEnrollCount] = useState({}); // Thêm state mới
+  const [categoryCourseCounts, setCategoryCourseCounts] = useState({}); // Thêm state mới
+  const [showNewOnly, setShowNewOnly] = useState(false); // Thêm state mới
 
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?._id;
@@ -39,19 +42,52 @@ const Course = () => {
           axios.get(`http://localhost:5000/api/enroll/count`), // Thêm API call mới
         ]);
 
-        setCourses(courseRes.data);
+        // Tạo object chứa số lượng enroll cho mỗi course
+        const courseCounts = {};
+        enrollmentCountRes.data.forEach((item) => {
+          courseCounts[item._id] = item.count;
+        });
+
+        // Tạo object chứa số lượng enroll cho từng khóa học
+        const courseEnrollments = {};
+        enrollmentCountRes.data.forEach((item) => {
+          courseEnrollments[item._id] = item.count;
+        });
+        setCoursesEnrollCount(courseEnrollments);
+
+        // Tính số lượng enrollment cho mỗi category
+        const categoryCounts = {};
+        courseRes.data.forEach((course) => {
+          const categoryId = course.categoryId?._id;
+          if (categoryId) {
+            categoryCounts[categoryId] =
+              (categoryCounts[categoryId] || 0) +
+              (courseCounts[course._id] || 0);
+          }
+        });
+
+        // Tính số lượng khóa học cho mỗi category
+        const coursesPerCategory = {};
+        courseRes.data.forEach((course) => {
+          const categoryId = course.categoryId?._id;
+          if (categoryId) {
+            coursesPerCategory[categoryId] =
+              (coursesPerCategory[categoryId] || 0) + 1;
+          }
+        });
+        setCategoryCourseCounts(coursesPerCategory);
+
+        // Sắp xếp courses theo số lượng enrollment
+        const sortedCourses = courseRes.data.sort(
+          (a, b) => (courseCounts[b._id] || 0) - (courseCounts[a._id] || 0)
+        );
+
+        setCourses(sortedCourses);
         setEnrolled(enrollRes.data.map((id) => String(id)));
         setCategories(categoryRes.data);
         setLevels(levelRes.data);
-
-        // Chuyển đổi mảng count thành object để dễ truy cập
-        const countsObj = {};
-        enrollmentCountRes.data.forEach((item) => {
-          countsObj[item._id] = item.count;
-        });
-        setEnrollmentCounts(countsObj);
       } catch (error) {
-        console.error("Error fetching data:", error.response || error.message);
+        console.error("Error fetching data:", error);
       }
     };
 
@@ -74,6 +110,15 @@ const Course = () => {
     );
   };
 
+  // Thêm hàm kiểm tra khóa học mới
+  const isNewCourse = (createdAt) => {
+    const courseDate = new Date(createdAt);
+    const currentDate = new Date();
+    const diffTime = Math.abs(currentDate - courseDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 31;
+  };
+
   const filteredCourses = courses.filter((course) => {
     const matchCategory =
       selectedCategories.length === 0 ||
@@ -92,7 +137,9 @@ const Course = () => {
       (course.description &&
         course.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    return matchCategory && matchLevel && matchSearch;
+    const matchNew = !showNewOnly || isNewCourse(course.createdAt);
+
+    return matchCategory && matchLevel && matchSearch && matchNew;
   });
 
   return (
@@ -101,24 +148,51 @@ const Course = () => {
       <div className="container mx-auto py-8 px-4 grid grid-cols-4 gap-6 flex-grow">
         <aside className="col-span-1 border-r pr-4">
           <h2 className="font-bold text-xl mb-4">Category</h2>
+          {/* Thêm filter New courses */}
+          <div className="flex items-center justify-between mb-4 pr-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="new-courses"
+                checked={showNewOnly}
+                onCheckedChange={setShowNewOnly}
+              />
+              <label
+                htmlFor="new-courses"
+                className="text-sm cursor-pointer flex items-center"
+              >
+                New Courses
+                <span className="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                  New
+                </span>
+              </label>
+            </div>
+          </div>
+          <Separator className="my-4" />
           {categories.map((category) => (
             <div
               key={category._id}
-              className="flex items-center space-x-2 mb-2"
+              className="flex items-center justify-between mb-2 pr-2"
             >
-              <Checkbox
-                id={String(category._id)}
-                checked={selectedCategories.includes(String(category._id))}
-                onCheckedChange={() =>
-                  handleFilterCategory(String(category._id))
-                }
-              />
-              <label
-                htmlFor={String(category._id)}
-                className="text-sm cursor-pointer"
-              >
-                {category.categoryName}
-              </label>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id={String(category._id)}
+                  checked={selectedCategories.includes(String(category._id))}
+                  onCheckedChange={() =>
+                    handleFilterCategory(String(category._id))
+                  }
+                />
+                <label
+                  htmlFor={String(category._id)}
+                  className="text-sm cursor-pointer"
+                >
+                  {category.categoryName}
+                </label>
+              </div>
+              <div className="text-sm text-gray-500">
+                <span className="mr-2">
+                  ( {categoryCourseCounts[category._id] || 0} )
+                </span>
+              </div>
             </div>
           ))}
 
@@ -159,7 +233,19 @@ const Course = () => {
           <div className="grid gap-4">
             {filteredCourses.length > 0 ? (
               filteredCourses.map((course) => (
-                <Card key={course._id} className="flex p-4">
+                <Card
+                  key={course._id}
+                  className={`flex p-4 transition-all duration-300 relative ${
+                    enrolled.includes(String(course._id))
+                      ? "bg-blue-50 border-blue-200 hover:shadow-blue-100" // Style cho khóa học đã đăng ký
+                      : "bg-white hover:shadow-lg"
+                  }`}
+                >
+                  {isNewCourse(course.createdAt) && (
+                    <span className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                      New
+                    </span>
+                  )}
                   <Link
                     to={
                       enrolled.includes(String(course._id))
@@ -171,35 +257,43 @@ const Course = () => {
                     <img
                       src={course.image}
                       alt={course.title}
-                      className="w-full h-24 object-cover rounded-lg transition-transform duration-300 hover:scale-105"
+                      className={`w-full h-24 object-cover rounded-lg transition-transform duration-300 hover:scale-105 ${
+                        enrolled.includes(String(course._id))
+                          ? "border-2 border-blue-300" // Thêm border cho ảnh khóa học đã đăng ký
+                          : ""
+                      }`}
                     />
                   </Link>
-                  <CardContent className="ml-4 flex-1 flex flex-col">
-                    <div className="flex-1">
+                  <CardContent className="ml-4 flex flex-col">
+                    <div className="flex justify-between items-center">
                       <Link
                         to={
                           enrolled.includes(String(course._id))
                             ? `/enrolled/${course._id}`
                             : `/courses/detail/${course._id}`
                         }
-                        className="text-lg font-semibold transition-all duration-300 hover:underline hover:text-blue-600"
+                        className={`text-lg font-semibold transition-all duration-300 hover:underline ${
+                          enrolled.includes(String(course._id))
+                            ? "text-blue-600" // Màu chữ khác cho tiêu đề khóa học đã đăng ký
+                            : "hover:text-blue-600"
+                        }`}
                       >
                         {course.title}
                       </Link>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
                       <p className="text-sm text-gray-500">
                         By: {course.instructor?.name}
                       </p>
-                    </div>
-                    <div className="flex justify-between items-end mt-auto">
-                      <p className="text-lg font-bold">
-                        {course.price === 0
-                          ? "Miễn phí"
-                          : `${course.price.toLocaleString()} VND`}
-                      </p>
-                      <p className="text-sm text-gray-600 ml-auto">
-                        {enrollmentCounts[course._id] || 0} học viên đã tham gia
+                      <p className="text-sm text-gray-500 ml-36">
+                        {coursesEnrollCount[course._id] || 0} học viên
                       </p>
                     </div>
+                    <p className="text-lg font-bold mt-1">
+                      {course.price === 0
+                        ? "Miễn phí"
+                        : `${course.price.toLocaleString()} VND`}
+                    </p>
                   </CardContent>
                 </Card>
               ))

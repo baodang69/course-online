@@ -37,10 +37,13 @@ exports.checkEnrolled = async (req, res) => {
 //Hàm tìm enrollment
 exports.getAllEnrollments = async (req, res) => {
   try {
-    const enrollments = await Enrollment.find().populate("course user");
+    const enrollments = await Enrollment.find()
+      .populate("course")
+      .populate("user")
+      .sort({ createdAt: 1 });
     res.json(enrollments);
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server!", error });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -105,11 +108,13 @@ exports.getEnrollmentCount = async (req, res) => {
     const enrollments = await Enrollment.aggregate([
       {
         $group: {
-          _id: "$course",
+          _id: "$course", // Đảm bảo đây là ObjectId của course
           count: { $sum: 1 },
         },
       },
     ]);
+
+    console.log("Enrollment counts:", enrollments); // Debug log
     res.json(enrollments);
   } catch (error) {
     res.status(500).json({ message: error.message });

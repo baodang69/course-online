@@ -7,7 +7,7 @@ const levelRouter = require("./levelRoutes");
 const roleRouter = require("./roleRoutes");
 const contactRouter = require("./contactRoutes");
 const commentRouter = require("./commentRoutes");
-const userRouter = require("./userRoutes"); // Thêm dòng này
+const userRouter = require("./userRoutes");
 
 function route(app) {
   app.use("/api", authRouter);
@@ -19,7 +19,7 @@ function route(app) {
   app.use("/api/role", roleRouter);
   app.use("/api/contact", contactRouter);
   app.use("/api/comments", commentRouter);
-  app.use("/api/user", userRouter); // Thêm dòng này
+  app.use("/api/user", userRouter);
 }
 
 module.exports = route;
